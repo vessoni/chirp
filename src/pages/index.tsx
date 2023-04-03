@@ -10,11 +10,21 @@ dayjs.extend(relativeTime);
 import { api, type RouterOutputs } from "~/utils/api";
 import Image from "next/image";
 import { LoadingPage } from "~/components/loading";
+import { useState } from "react";
 
 const CreatePostWizard = () => {
   const { user } = useUser();
 
-  console.log(user);
+  const [input, setInput] = useState<string>("");
+
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.posts.getAll.invalidate();
+    },
+  });
 
   if (!user) {
     return null;
@@ -33,7 +43,11 @@ const CreatePostWizard = () => {
       <input
         placeholder="Type some Emoji!"
         className="grow bg-transparent outline-none"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
       />
+      <button onClick={() => mutate({ content: input })}>Post</button>
     </div>
   );
 };
