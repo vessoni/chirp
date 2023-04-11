@@ -9,8 +9,9 @@ dayjs.extend(relativeTime);
 
 import { api, type RouterOutputs } from "~/utils/api";
 import Image from "next/image";
-import { LoadingPage } from "~/components/loading";
+import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const CreatePostWizard = () => {
   const { user } = useUser();
@@ -23,6 +24,15 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.posts.getAll.invalidate();
     },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if(errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0])
+      }else {
+        toast.error("Falied to post! Please try again later!")
+      }
+    
+    }
   });
 
   if (!user) {
@@ -44,9 +54,21 @@ const CreatePostWizard = () => {
         className="grow bg-transparent outline-none"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (input !== "") {
+              mutate({ content: input });
+            }
+          }
+        }
+      }
         disabled={isPosting}
       />
-      <button onClick={() => mutate({ content: input })}>Post</button>
+
+      {input !== "" && !isPosting && ( <button onClick={() => mutate({ content: input })}  >Post</button>) }
+      {isPosting && <div className="flex justify-center items-center"><LoadingSpinner size={20} /> </div>}
+     
     </div>
   );
 };
